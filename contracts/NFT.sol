@@ -10,19 +10,19 @@ contract NFT is ERC721 {
   string public baseURI;
   IReward public reward;
   IRandom public random;
-  uint256 tokenCounter;
-  uint256 timeOfLastWinner;
+  uint256 public tokenCounter;
+  uint256 public timeOfLastWinner;
 
-  constructor(address _reward, address _random, string memory _baseURI) ERC721("TODO NAME", "TODO SYMBOL") { // todo
+  constructor(address _reward, address _random, string memory _URI) ERC721("The Lucky Bastards Lotto", "LBL") {
     reward = IReward(_reward);
     random = IRandom(_random);
-    baseURI = _baseURI;
+    baseURI = _URI;
     timeOfLastWinner = block.timestamp;
   }
 
   function setWinner() public {
       // should pass at least 1 week to set new winner
-      if(block.timestamp > timeOfLastWinner + 604800) {
+      if(block.timestamp > timeOfLastWinner + 604800 && tokenCounter != 0) {
           IRandom _random = random;
           _random.regenerateHash();
           reward.distribute(ERC721.ownerOf(_random.rand(tokenCounter)));
@@ -40,7 +40,7 @@ contract NFT is ERC721 {
     uint256 _length = _to.length; 
     for(uint8 i; i < _length; ++i) {
       ERC721._mint(_to[i], tokenCounter);
-      tokenCounter = ++tokenCounter;
+      ++tokenCounter;
     }
     require(tokenCounter <= 2500, "LimitExceeded");
   }
