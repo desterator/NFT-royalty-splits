@@ -21,7 +21,7 @@ contract Reward is Ownable {
     uint256 _amount = wETH.balanceOf(address(this)) / 2;
     if (_amount == 0) {
       return;
-    } 
+    }
 
     wETH.transfer(dev, _amount);
     wETH.transfer(_winner, _amount);

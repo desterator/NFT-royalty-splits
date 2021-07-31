@@ -30,6 +30,7 @@ contract("NFT", async (accounts) => {
     let nft;
     let random;
     let reward;
+    let weth;
 
     before("setup", async () => {
         random = await Random.new(0);
@@ -62,7 +63,7 @@ contract("NFT", async (accounts) => {
             assert.equal(1, await nft.balanceOf(DEFAULT));
             assert.equal(DEFAULT, await nft.ownerOf(0));
         });
-        it.only("should mint tokens and check that impossible exceed limit", async () => {
+        it("should mint tokens and check that impossible exceed limit", async () => {
             assert.equal(50, array.length);
 
             for(let i = 0; i < 50; ++i) {
@@ -82,8 +83,11 @@ contract("NFT", async (accounts) => {
     describe("setWinner", async () => {
         it("should update timer and ditribute 0", async () => {
             await nft.mint([DEFAULT]);
-            const timestamp = toBN((await web3.eth.getBlock("latest")).timestamp);
+            let timestamp = toBN((await web3.eth.getBlock("latest")).timestamp);
+            const week = "604800";
+            await setCurrentTime(timestamp.plus(week));
             await nft.setWinner();
+            timestamp = toBN((await web3.eth.getBlock("latest")).timestamp);
 
             // 1-2 sec standart ganache miss
             assert.isTrue(timestamp.toString() === toBN(await nft.timeOfLastWinner()).toString() ||
@@ -91,6 +95,51 @@ contract("NFT", async (accounts) => {
                           timestamp.toString() === toBN(await nft.timeOfLastWinner()).minus(1).toString() ||
                           timestamp.toString() === toBN(await nft.timeOfLastWinner()).plus(2).toString() ||
                           timestamp.toString() === toBN(await nft.timeOfLastWinner()).minus(2).toString());
+        });
+        it("should update timer and ditribute 100", async () => {
+            await nft.mint([DEFAULT]);
+            let timestamp = toBN((await web3.eth.getBlock("latest")).timestamp);
+            const amount = 100;
+
+            await web3.eth.sendTransaction({from: DEFAULT, to: reward.address, value: amount});
+            assert.equal(amount, await weth.balanceOf(reward.address));
+
+            const week = "604800";
+            await setCurrentTime(timestamp.plus(week));
+            await nft.setWinner();
+            timestamp = toBN((await web3.eth.getBlock("latest")).timestamp);
+
+            // 1-2 sec standart ganache miss
+            assert.isTrue(timestamp.toString() === toBN(await nft.timeOfLastWinner()).toString() ||
+                          timestamp.toString() === toBN(await nft.timeOfLastWinner()).plus(1).toString() ||
+                          timestamp.toString() === toBN(await nft.timeOfLastWinner()).minus(1).toString() ||
+                          timestamp.toString() === toBN(await nft.timeOfLastWinner()).plus(2).toString() ||
+                          timestamp.toString() === toBN(await nft.timeOfLastWinner()).minus(2).toString());
+
+            assert.equal(amount / 2, await weth.balanceOf(DEV));
+            // because only one member
+            assert.equal(amount / 2, await weth.balanceOf(DEFAULT));
+        });
+    });
+    describe("overriding internal function", async () => {
+        it("should approve token and distribute 0", async () => {
+            await nft.mint([DEFAULT]);
+            const timeOfLastWinner = toBN(await nft.timeOfLastWinner()).toString();
+            const week = "604800";
+            let timestamp = toBN((await web3.eth.getBlock("latest")).timestamp);
+            await setCurrentTime(timestamp.plus(week));
+            await nft.approve(DEV, 0);
+            timestamp = toBN((await web3.eth.getBlock("latest")).timestamp);
+
+            // check that approve works by overriding and set winner fucntion also called
+            assert.isTrue(timeOfLastWinner != (await nft.timeOfLastWinner()).toString());
+            assert.isTrue(timestamp.toString() === toBN(await nft.timeOfLastWinner()).toString() ||
+                          timestamp.toString() === toBN(await nft.timeOfLastWinner()).plus(1).toString() ||
+                          timestamp.toString() === toBN(await nft.timeOfLastWinner()).minus(1).toString() ||
+                          timestamp.toString() === toBN(await nft.timeOfLastWinner()).plus(2).toString() ||
+                          timestamp.toString() === toBN(await nft.timeOfLastWinner()).minus(2).toString());
+
+            assert.equal(DEV, (await nft.getApproved(0)));
         });
     });
 });
