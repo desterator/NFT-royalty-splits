@@ -2,10 +2,11 @@
 pragma solidity 0.8.6;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interface/IReward.sol";
 import "./interface/IRandom.sol";
 
-contract NFT is ERC721 {
+contract NFT is ERC721, Ownable {
 
   string public baseURI;
   IReward public reward;
@@ -36,7 +37,11 @@ contract NFT is ERC721 {
     return baseURI;
   }
 
-  function mint(address[] memory _to) external {
+  function setBaseURI(string memory _URI) onlyOwner external {
+    baseURI = _URI;
+  }
+
+  function mint(address[] memory _to) onlyOwner external {
     uint256 _length = _to.length; 
     for(uint8 i; i < _length; ++i) {
       ERC721._mint(_to[i], tokenCounter);

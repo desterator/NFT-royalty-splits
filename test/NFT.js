@@ -54,6 +54,12 @@ contract("NFT", async (accounts) => {
             assert.equal(baseURI + "0", await nft.tokenURI(0));
             console.log(await nft.tokenURI(0));
         });
+        it("should set new uri", async () => {
+            const uri = "My new link";
+
+            await nft.setBaseURI(uri);
+            assert.equal(uri, await nft.baseURI());
+        });
     });
     describe("mint", async () => {
         it("should mint token", async () => {
