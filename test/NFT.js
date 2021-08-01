@@ -46,7 +46,7 @@ contract("NFT", async (accounts) => {
 
     afterEach(reverter.revert);
 
-    describe.only("_baseURI/tokenURI", async () => {
+    describe("_baseURI/tokenURI", async () => {
         it("should check token uri", async () => {
             assert.equal(baseURI, await nft.baseURI());
 
